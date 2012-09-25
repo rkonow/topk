@@ -36,8 +36,8 @@ namespace cds_static
             vector<uint>  range_report_2d_aux(size_t x_start,size_t x_end,size_t y_start,size_t y_end,RMQ *&rmq);
             void range_report_2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,uint sym, size_t start, size_t end, vector<uint> &result,size_t freq,RMQ *&r);
 
-            vector<uint>  rr2d_aux(size_t x_start,size_t x_end,size_t y_start,size_t y_end,RMQ *&rmq);
-            void rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,uint sym, size_t start, size_t end, vector<uint> &result,size_t freq,RMQ *&r);
+            vector<uint>  rr2d_aux(size_t x_start,size_t x_end,size_t y_start,size_t y_end,size_t y_start_aux, size_t y_end_aux);
+            void rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,size_t y_start_aux, size_t y_end_aux, uint sym, size_t start, size_t end, vector<uint> &result);
 
 
 
@@ -82,8 +82,9 @@ namespace cds_static
             uint set(uint val, uint ind) const;
 
             /** Recursive function for building the Wavelet Tree. */
-            void build_level(uint **bm, uint *symbols, uint level, uint length, uint offset,uint *weight);
-            void build_level(uint **bm, uint *symbols, unsigned width, uint level, uint length, uint offset,uint *weight);
+            void build_level(uint **bm, uint *symbols, uint level, uint length, uint offset);
+            void build_level(uint **bm, uint *symbols, unsigned width, uint level, uint length, uint offset);
+            void sortWeights(uint *weight);
     };
 };
 #endif

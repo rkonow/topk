@@ -19,6 +19,8 @@
  *
  */
 
+#include <queue>
+
 #include <WaveletTreeRMQ.h>
 namespace cds_static
 {
@@ -74,14 +76,15 @@ namespace cds_static
                 _bm[i][j]=0;
         }
         this->rmq = new RMQ*[height];
-        this->rmq[0] = new RMQ((int*)weight,this->n);
-
-        build_level(_bm,new_symb,0,new_n,0,weight);
+        
+        build_level(_bm,new_symb,0,new_n,0);
         bitstring = new BitSequence*[height];
         for(uint i=0;i<height;i++) {
             bitstring[i] = bmb->build(_bm[i],new_n);
             delete [] _bm[i];
         }
+        sortWeights(weight);
+
         delete [] _bm;
 
         // delete [] new_symb; // already deleted in build_level()!
@@ -143,10 +146,10 @@ namespace cds_static
 
 
         this->rmq = new RMQ*[height];
-        this->rmq[0] = new RMQ((int*)weight,this->n);
+        // this->rmq[0] = new RMQ((int*)weight,this->n);
 
 
-        build_level(_bm,new_symb,0,new_n,0,weight);
+        build_level(_bm,new_symb,0,new_n,0);
         bitstring = new BitSequence*[height];
         for(uint i=0;i<height;i++) {
             bitstring[i] = bmb->build(_bm[i],new_n);
@@ -406,110 +409,269 @@ namespace cds_static
 
     }
 
-    vector<uint>  WaveletTreeRMQ::rr2d_aux(size_t x_start,size_t x_end,size_t y_start,size_t y_end,RMQ *&r)    {
-        //RMQ *t = new RMQ();
-        vector<uint> result;
-        //      result.reserve(1500);
-        rr2d(0,x_start,x_end,y_start,y_end,0,0,n-1,result,0,r);
-        return result;
+    uint getBit(uint d,uint pos) {
+    if(d & (1<<pos))
+        return 1;
+    else 
+        return 0;
     }
-
-
     uint lastBit(uint d) {
         uint count_bits=0;
         int aux = d;
-        while(aux) {
-            aux = aux >> 1;
-            count_bits++;
+
+        while(getBit(aux, count_bits++)==0) {
+            if (count_bits > 32)
+            return 1;
         }
         return count_bits; 
     }
+   
+    uint createMask(uint i,uint j) {
+        uint aux = ~((~0u << j) & (~0u >> i));
+        return aux;
+    }
 
-    void WaveletTreeRMQ::rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,uint sym, size_t start, size_t end,vector<uint> &result,size_t freq,RMQ *&r)
+    vector<uint>  WaveletTreeRMQ::rr2d_aux(size_t x_start,size_t x_end,size_t y_start,size_t y_end,size_t y_start_aux, size_t y_end_aux)    {
+        //RMQ *t = new RMQ();
+        vector<uint> result;
+        //      result.reserve(1500);
+        rr2d(0,x_start,x_end,y_start,y_end,y_start,y_end,0,0,n-1,result);
+        return result;
+    }
+    
+    void WaveletTreeRMQ::rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,size_t y_start_aux, size_t y_end_aux,uint sym, size_t start, size_t end,vector<uint> &result)
     {   
-        uint count_bits = lastBit(sym);
-        uint  max_symbol |= ~(1<<(height-count_bits));
-        uint min_symbol = sym << height-count_bits;
-        if (sym > max_symbol) 
-            return;
-        // bit = sym & (1<<lev)
-        // if (bit == 0) {
-        //     goleft()
-        // } else {
-        //     goright()
-        // }
-        BitSequence *bs = bitstring[lev]
-        for (int y = y_start ; y <= y_end;y++ )  {
-            this->rmq[lev]->query(bs->rank1(x_start)-1,bs->rank1(x_end+1)-1)    
-        }
-        
-        // size_t x_start_left,x_start_right,x_end_left,x_end_right;
-        // size_t before;
-        // size_t end_left;
-        // size_t end_right;
-        // size_t start_left;
-        // size_t start_right;
+        // BitSequence *bs;
+        // while (lev < height) {
+            
+        //     uint mask_left = createMask(0,height-lev-1);
+        //     uint mask_right = createMask(0,height-lev);
+        //     uint max_left = 0;
+        //     if (sym == 0)
+        //     max_left = mask_left;
+        //     else
+        //     max_left = sym | mask_left;
 
-        // if (x_start > x_end || x_end > n-1)     
-        //        return;
-        // if (am->unmap(sym) > y_end)
+        //     uint max_right = set(sym,lev) | mask_right;
+        //     uint min_left = max_left/2;
+        //     uint min_right = max_right/2+1;
+        //     cout << "level = " << lev << endl;
+        //     cout << "max_symbol_left = " << max_left << endl;
+        //     cout << "min_symbol_left = " << min_left << endl;
+        //     cout << endl;
+        //     cout << "max_symbol_right = " << max_right << endl;
+        //     cout << "min_symbol_right = " << min_right << endl;
+        //     cout << "symbol = " << sym << endl;
+        //     bs = bitstring[lev];
+        //     if (min_left <= y_end && max_left >= y_end){
+        //         // if (y_end == max_left) {
+        //         //     lev++;
+        //         //     sym = set(sym,lev);
+        //         //     cout << "symbol = " << sym << endl;
+        //         //  //   break;    
+        //         // }
+        //         lev++;
+        //     }
+        //     if (min_right <= y_end && max_right >= y_end) {
+        //         sym = set(sym,lev);
+        //         lev++;
+        //     }
+            
+        // }
+        // uint count_bits = lastBit(sym);
+        // uint  max_symbol |= ~(1<<(height-count_bits));
+        // uint min_symbol = sym << height-count_bits;
+        // if (sym > max_symbol) 
         //     return;
-        // if (lev < height)
-        // {
-        //     BitSequence* bs = bitstring[lev];
-        //     if (start==0) before=0;
-        //     else before = bs->rank1(start-1);
-
-        //         size_t rank_left = bs->rank1(start+x_start-1);
-        //         size_t rank_right = bs->rank1(start+x_end);
-               
-        //         x_start_left = x_start - (rank_left - before);
-        //         x_end_left = x_end - (rank_right - before);
-        //         end_left = end - (bs->rank1(end) - before);
-        //         start_left = start;
-        //         //cout << "izquierda | x_start_left = " << x_start_left << " x_end_left = " << x_end_left << endl;
-        //         rr2d(lev+1,x_start_left,x_end_left,y_start,y_end,sym,start_left,end_left,result,freq,r);
-
-
-        //         sym=set(sym,lev);
-        //         if (am->unmap(sym) > y_end)
-        //             return;                       
-        //         start_right = end - (bs->rank1(end)-before) + 1;
-        //         end_right = end;
-        //         x_start_right = rank_left - before ;
-        //         x_end_right = rank_right - before-1;   
-        //         //cout << "derecha | x_start_left = " << x_start_right << " x_end_left = " << x_end_right << endl;
-        //         rr2d(lev+1,x_start_right,x_end_right,y_start,y_end,sym,start_right,end_right,result,freq,r);
-
+        // // bit = sym & (1<<lev)
+        // // if (bit == 0) {
+        // //     goleft()
+        // // } else {
+        // //     goright()
+        // // }
+        // BitSequence *bs = bitstring[lev]
+        // for (int y = y_start ; y <= y_end;y++ )  {
+        //     this->rmq[lev]->query(bs->rank1(x_start)-1,bs->rank1(x_end+1)-1)    
         // }
-        // else
-        // {   
-        //         if (x_start > x_end)
-        //         return;
-        //         BitSequence* bs = bitstring[lev-1];
-        //         if (am->unmap(sym) <= y_end && am->unmap(sym) >= y_start)
-        //         {
-        //             cout << sym << endl;
-        //             uint q_start;
-        //             uint q_end;
-        //             if (x_start == x_end){
-        //                 q_start = start+x_start;
-        //                 q_end = q_start+1;
-        //             }else {
-        //                 q_start = start+x_start;
-        //                 q_end = start+x_end;
-        //             }
+        
+        size_t x_start_left,x_start_right,x_end_left,x_end_right;
+        size_t before;
+        size_t end_left;
+        size_t end_right;
+        size_t start_left;
+        size_t start_right;
 
-        //             int k = 10;
-        //             vector<uint> v_results = topk(q_start,q_end,bits(k)+1,r);
-        //             for (int i = 0 ; i < v_results.size();i++)
-        //             {
-        //                 result.push_back(v_results[i]);    
-        //             }                   
-        //         }
-        //         else
-        //             return;
-        // }   
+        uint mask = createMask(0,height-lev);
+        uint mask2 = createMask(0,height-(lev+1));
+
+        size_t min_left = sym;
+        size_t max_left = sym | mask2;
+        size_t min_right = set(sym,lev);
+        size_t max_right = set(sym,lev) | mask;
+
+        size_t y_start_left,y_end_left,y_start_right,y_end_right = 0;
+
+        cout << "min_left =" << min_left << endl;
+        cout << "max_left =" << max_left << endl;
+        cout << endl;
+        cout << "min_right =" << min_right << endl;
+        cout << "max_right =" << max_right << endl;
+
+        if (x_start > x_end || x_end > n-1)     
+               return;
+
+        if (y_start <= y_start_aux && y_end >= y_end_aux && lev != 0 ){
+            cout << "FOUND IT!!!" << endl;
+            cout << "FOUND IT!!!->level = " << lev <<  endl;
+            cout << "y_start_aux =  " << y_start_aux <<  endl;
+            cout << "y_end_aux =  " << y_end_aux <<  endl;
+            cout << "x_start = " << x_start << endl;
+            cout << "x_end = " << x_end << endl;
+            uint m;
+            if (lev == height-1) {
+                m = this->rmq[lev]->query(x_start,x_end);
+                cout << "m is = " << m << endl;
+                return;
+            } else {
+                uint ret=sym;
+                size_t n_start=x_start;
+                size_t n_end=x_end;
+                m = this->rmq[lev]->query(x_start,x_end);
+                cout << "x_start = " << x_start << endl;
+                cout << "x_end = " << x_end << endl;
+                cout << "entering with m = " << m << endl;
+                while(lev < height) {
+                    if(bitstring[lev]->access(m)) {
+                        ret=set(ret,lev);
+                        m=bitstring[lev]->rank1(m-1)-bitstring[lev]->rank1(n_start-1);
+                        n_start=(bitstring[lev]->rank1(n_end)-bitstring[lev]->rank1(n_start-1));
+                        n_start=n_end-n_start+1;
+                        m+=n_start;
+                    } else {
+                        m=m-n_start-(bitstring[lev]->rank1(m)-bitstring[lev]->rank1(n_start-1));
+                        n_end=end-n_start-(bitstring[lev]->rank1(n_end)-bitstring[lev]->rank1(n_start-1));
+                        n_end+=start;
+                        m+=start;
+                    }
+                    lev++;
+                }
+                cout << "symbol is " << ret << endl;
+              //  return;
+            }
+        }
+
+        cout << "y_start =" << y_start << endl;
+        cout << "y_end =" << y_end << endl;
+        cout << endl;
+        cout << "y_start_aux =" << y_start_aux << endl;
+        cout << "y_end_aux =" << y_end_aux << endl;
+        cout << endl;
+       
+       
+
+        if (lev < height)
+        {
+            BitSequence* bs = bitstring[lev];
+            if (start==0) before=0;
+            else before = bs->rank1(start-1);
+
+                size_t rank_left = bs->rank1(start+x_start-1);
+                size_t rank_right = bs->rank1(start+x_end);
+                int liveright = 1;
+                int liveleft = 1;
+
+                if (rank_left == rank_right) {
+                    liveright = 0;
+                }
+                if ( (rank_right - rank_left) == (x_end - x_start)){
+                    liveleft = 0;
+                }
+
+
+                x_start_left = x_start - (rank_left - before);
+                x_end_left = x_end - (rank_right - before);
+                end_left = end - (bs->rank1(end) - before);
+                start_left = start;
+                //cout << "izquierda | x_start_left = " << x_start_left << " x_end_left = " << x_end_left << endl;              
+
+                if (y_start_aux >= min_left && y_start_aux <= max_left) {
+                    y_start_left = y_start_aux;
+                } else {
+                    cout << "retornando 1" << endl;
+                    return;
+                }
+
+                if (y_end_aux >= min_left && y_end_aux <= max_left) {
+                     y_end_left = y_end_aux;
+                } else if (y_start_aux >= min_left && y_start_aux <= max_left) {
+                     y_start_left = y_start_aux;
+                     y_end_left = max_left;
+                }
+                else {
+                    cout << "retornando 2" << endl;
+                    return;  
+                } 
+                cout << "y_start_left = " << y_end_right << endl;
+                cout << "y_end_left = " << y_end_right << endl;
+                cout << endl;
+                if (liveleft)
+                    rr2d(lev+1,x_start_left,x_end_left,y_start,y_end,y_start_left,y_end_left,sym,start_left,end_left,result);              
+                
+                if (y_start_aux >= min_right && y_start_aux <= max_right) {
+                  y_start_right = y_start_aux;  
+                } else if(y_end_aux >= min_right && y_end_aux <= max_right) {
+                  y_start_right = min_right;  
+                } else {
+                    cout << "retornando en 3 " << endl;
+                  return;  
+                } 
+
+                if (y_end_aux >= min_right && y_end_aux <= max_right) {
+                  y_end_right = y_end_aux;  
+                } else {
+                    cout << "retornando en 4" << endl;
+                  return;  
+                } 
+                 cout << "y_start_right = " << y_end_right << endl;
+                 cout << "y_end_right = " << y_end_right << endl;
+                sym=set(sym,lev);
+                start_right = end - (bs->rank1(end)-before) + 1;
+                end_right = end;
+                x_start_right = rank_left - before ;
+                x_end_right = rank_right - before-1;   
+                //cout << "derecha | x_start_left = " << x_start_right << " x_end_left = " << x_end_right << endl;
+                if (liveright)
+                    rr2d(lev+1,x_start_right,x_end_right,y_start,y_end,y_start_right,y_end_right,sym,start_right,end_right,result);
+
+        }
+        else
+        {   
+                if (x_start > x_end)
+                return;
+                BitSequence* bs = bitstring[lev-1];
+                // if (am->unmap(sym) <= y_end && am->unmap(sym) >= y_start)
+                // {
+                //     cout << sym << endl;
+                //     uint q_start;
+                //     uint q_end;
+                //     if (x_start == x_end){
+                //         q_start = start+x_start;
+                //         q_end = q_start+1;
+                //     }else {
+                //         q_start = start+x_start;
+                //         q_end = start+x_end;
+                //     }
+
+                //     int k = 10;
+                //     vector<uint> v_results = topk(q_start,q_end,bits(k)+1,r);
+                //     for (int i = 0 ; i < v_results.size();i++)
+                //     {
+                //         result.push_back(v_results[i]);    
+                //     }                   
+                // }
+                // else
+                //     return;
+        }   
 
     }
 
@@ -681,59 +843,108 @@ namespace cds_static
         return bytesBitstrings+occ->getSize()+ptrs+bytesRMQ;
     }
 
-    void WaveletTreeRMQ::build_level(uint **bm, uint *symbols, uint level, uint length, uint offset,uint *weight) {
+    void WaveletTreeRMQ::sortWeights(uint *weight) {
+        uint i = 0;
+        queue<pair<uint, uint> > ranges;
+        ranges.push(make_pair(0u, n));
+
+        while (i < height) {
+            pair<uint, uint> r = ranges.front();
+            ranges.pop();
+
+            uint ini = r.first;
+            uint fin = r.second;
+            uint w_left = 0;
+            uint w_right = 0;
+
+            for (int k = ini ; k < fin ; k++) {
+                if (bitstring[i]->access(k) == 0) {
+                    w_left++;
+                } else {
+                    w_right++;
+                }
+            }
+
+            uint *weight_aux_left = new uint[w_left];
+            uint *weight_aux_right = new uint[w_right];
+            uint pos_left = 0, pos_right = 0;
+            for (int k = ini; k < fin; k++) {
+                if (bitstring[i]->access(k)) {
+                    weight_aux_right[pos_right++] = weight[k];
+                } else {
+                    weight_aux_left[pos_left++] = weight[k];
+                }
+            }
+
+            assert(pos_left == w_left);
+            assert(pos_right == w_right);
+            assert(pos_left + pos_right == fin - ini);
+
+            for (int k = 0; k < pos_left; k++) 
+                weight[k + ini] = weight_aux_left[k];
+            for (int k = 0; k < pos_right; k++)
+                weight[k + ini + pos_left] = weight_aux_right[k];
+
+            ranges.push(make_pair(ini, ini+pos_left));
+            ranges.push(make_pair(ini+pos_left, fin));
+
+            if (fin == n) {
+                rmq[i] = new RMQ((int*)weight, n);
+                i ++;
+            }
+        }
+    }
+
+    void WaveletTreeRMQ::build_level(uint **bm, uint *symbols, uint level, uint length, uint offset) {
         if(level==height) {
             delete [] symbols;
             return;
         }
-        
+        // cout << "constructing rmq on level " << level << endl;
+        // cout << "content is :" << endl; 
+        // for (int i = 0 ; i < this->n;i++ ) {
+        //     cout << " " << weight[i] << " ";
+        // }
+        // cout << endl;
         uint cleft=0;
         for(size_t i=0;i<length;i++)
             if(!is_set(symbols[i],level))
                 cleft++;
         uint cright=length-cleft;
         uint *left=new uint[cleft], *right=new uint[cright];
+        
         cleft=cright=0;
-
-        uint *wleft = new uint[cleft],
-            *wright = new uint[cright];
-        uint w_useright = 0;
-        uint w_useleft =0;
-
+        // uint w_use_left = 0;
+        // uint w_use_right = 0;
         for(size_t i=0;i<length;i++)
         if(!is_set(symbols[i],level)) {
             left[cleft++]=symbols[i];
             bitclean(bm[level],offset+i);
-            // wleft[w_useleft] = weight[offset+i];
-            wleft[w_useleft++] = weight[i];
-            //w_useleft++;
         }
         else {
             right[cright++]=symbols[i];
             bitset(bm[level],offset+i);
-           // wright[w_useright] = weight[offset+i];
-            wright[w_useright++] = weight[i];
-            //w_useright++;
         }
-
         delete [] symbols;
         symbols = 0;
 
-        build_level(bm,left,level+1,cleft,offset,wleft);
+        build_level(bm,left,level+1,cleft,offset);
         left = 0;                // Gets deleted in recursion.
-        build_level(bm,right,level+1,cright,offset+cleft,wright);
+        build_level(bm,right,level+1,cright,offset+cleft);
         right = 0;               // Gets deleted in recursion.
         //delete [] left;
         //delete [] right;
     }
 
     // symbols is an array of elements of "width" bits.
-    void WaveletTreeRMQ::build_level(uint **bm, uint *symbols, unsigned width, uint level, uint length, uint offset,uint *weight) {
+    void WaveletTreeRMQ::build_level(uint **bm, uint *symbols, unsigned width, uint level, uint length, uint offset) {
         if(level==height) {
             delete [] symbols;
             return;
         }
-        this->rmq[level] = new RMQ((int*)weight,length);
+        // cout << "constructing rmq on level " << level << endl;
+        // this->rmq[level] = new RMQ((int*)weight,length);
+
         uint cleft=0;
         for(size_t i=0;i<length;i++)
             if(!is_set(get_field(symbols, width, i),level))
@@ -743,33 +954,33 @@ namespace cds_static
             *right=new uint[(cright*width)/W + 1];
 
                 
-        uint *wleft = new uint[(cleft*width)+1],
-            *wright = new uint[(cright*width)+1];
-        uint w_useright = 0;
-        uint w_useleft =0;
+        // uint *wleft = new uint[(cleft*width)+1],
+        //     *wright = new uint[(cright*width)+1];
+        // uint w_useright = 0;
+        // uint w_useleft =0;
 
         cleft=cright=0;
         for(size_t i=0;i<length;i++)
         if(!is_set(get_field(symbols,width,i),level)) {
             set_field(left,width,cleft++,get_field(symbols, width,i));
             bitclean(bm[level],offset+i);
-            wleft[w_useleft] = weight[offset+i];
-            w_useleft++;
+            // wleft[w_useleft] = weight[offset+i];
+            // w_useleft++;
         }
         else {
             set_field(right,width,cright++,get_field(symbols,width,i));
             bitset(bm[level],offset+i);
-            wright[w_useright] = weight[offset+i];
-            w_useright++;
+            // wright[w_useright] = weight[offset+i];
+            // w_useright++;
 
         }
 
         delete [] symbols;
         symbols = 0;
 
-        build_level(bm,left,width,level+1,cleft,offset,wleft);
+        build_level(bm,left,width,level+1,cleft,offset);
         left = 0;                // Gets deleted in recursion.
-        build_level(bm,right,width,level+1,cright,offset+cleft,wright);
+        build_level(bm,right,width,level+1,cright,offset+cleft);
         right = 0;               // Gets deleted in recursion.
         //delete [] left;
         //delete [] right;

@@ -110,13 +110,16 @@ uint createMask(uint i,uint j) {
 int main()
 {
 	int n = 10;
-	int array[10] = {2,3,2,3,1,3,2,1,1,0};
-	uint array2[10] = {2,3,2,3,1,3,2,1,1,0};
+	
+	int array[10] = {0,1,2,3,4,5,6,7,1,2};
 	int Warray[10] = {1,2,3,4,5,6,7,8,9,10};
-	int array3[10] = {5,6,3,4,2,1,9,3,2,5};
+	
+
+	uint array2[10] = {2,3,2,3,1,3,2,1,1,0};
+	uint array3[10] = {5,6,3,4,2,1,9,3,2,5};
 	
 	uint sym = 0;
-	//setBit(sym,0);
+	setBit(sym,3);
 	//setBit(sym,2);
 	//setBit(sym,1);
 
@@ -161,20 +164,20 @@ int main()
 	uint x0,x1;
 	uint y0,y1;
 
-	sort(array,Warray,array3,0,9);
-	RMQ *r = new RMQ(Warray,10);
+	// sort(array,Warray,array3,0,9);
+	// RMQ *r = new RMQ(Warray,10);
 	// for (int i = 0 ; i < 10;i++)
 	// {
 	// 	cout << array[i] << " | " << Warray[i] << endl;
 	// }
 
 
-	x0 = 0;
+	x0 = 2;
 	x1 = 4;
-	y0 = 0;
-	y1 = 10;
+	y0 = 1;
+	y1 = 7;
 	
-	vector<uint> v = sequence->rr2d_aux(x0,x1,y0,y1,r);
+	vector<uint> v = sequence->rr2d_aux(x0,x1,y0,y1,y0,y1);
 //	cout << "returned a pq of size:" << pq.size() << endl;
 
 	for (int i = 0 ; i < v.size();i++ ) {
