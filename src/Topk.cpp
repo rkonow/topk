@@ -20,12 +20,12 @@ Topk::Topk(char * file,size_t *file_sizes, int num_files) {
     this->stp = new SuffixTreeHandler(cst,length);
    
     // Retrieve all Nodes in pre-Order
-    // all_nodes[i] -> [x,y]
+    // preorder_vector[i] -> [l,r]
     vector<pair<uint,uint> >  preorder_vector;
     pair<BitString *,uint> tree_parenthesis = this->stp->generateBitmap(5*length,preorder_vector);
     map<pair<uint,uint>,uint>  nodes;
 
-    // create an inverse map, to index according to [x,y]
+    // create an inverse map, to index according to [l,r]
     // [x,y] -> i
     for (int i = 0 ; i < preorder_vector.size();i++) {
         nodes[make_pair(preorder_vector[i].first,preorder_vector[i].second)] = i;
@@ -37,7 +37,7 @@ Topk::Topk(char * file,size_t *file_sizes, int num_files) {
     this->t = new tree_ff(tree_parenthesis.first->getData(),tree_parenthesis.second,OPT_FAST_LCA | OPT_FAST_PREORDER_SELECT | OPT_FAST_LEAF_SELECT);
     delete tree_parenthesis.first;
 
-    // create a Document Array
+    // create bitmap Document Array
     BitSequenceRG *bsrg;
     if (make_random_flag)
         bsrg = buildBs(file_sizes,length,rand_files,true);
@@ -45,15 +45,13 @@ Topk::Topk(char * file,size_t *file_sizes, int num_files) {
         bsrg = buildBs(file_sizes,length,num_files);
     this->d = bsrg;
 
-    this->da = new DocumentArray(cst,bsrg,preorder_vector,ticsa);
-    
+    this->da = new DocumentArray(cst,bsrg,preorder_vector,ticsa); 
     this->ll = new LinkList(2*length);
     this->fillLinkList(num_files);
     this->generateSequence();
 }
 
 void Topk::fillLinkList(uint num_files) {
-    size_t count = 0;
     for (uint i = 1 ; i <= num_files;i++) {
         size_t pos = 0;
         // Retrieve the positions of document i-1 in position pos+1 and pos+2.
@@ -72,11 +70,9 @@ void Topk::fillLinkList(uint num_files) {
             // the document that corresponds
             // the frequency for that node and document.
             this->ll->insert(this->nodes_preorder[make_pair(vl_lca,vr_lca)],i-1,da->countRange(i-1,vl_lca,vr_lca));
-
-            count++;
             pos++;
             pairc = this->da->selectDocument(i-1,pos+1);
-            if (pos >= length)
+            if (pos >= this->length)
                 break;
         }
     }
@@ -86,19 +82,21 @@ void Topk::generateSequence() {
     cout << "Constructing Sequences" << endl;
     this->max_freq = 0;
     vector<uint> frequencies;
+    vector<uint> depth_sequence;
     size_t pointersize = 0;
-    size_t leafs = 0;
+    // a 1 is set every time a node is being examinated. 
+    // all 0's corresponds to different documents for the same node.
     BitString *bsmap = new BitString(4*this->number_of_nodes);
+    // if is a leaf, mark it here
     BitString *bsleaf = new BitString(4*this->number_of_nodes);
+    // map leaf is to map the cst indexing to the pre-order traversal.
     BitString *map_leaf = new BitString(4*this->number_of_nodes);
 
     size_t vl_p,vr_p;
-    vector<uint> depth_sequence;
-    bool is_leaf = false;
-    for (uint i = 1; i < this->number_of_nodes;i++) {
+    for (uint i = 0; i < this->number_of_nodes;i++) {
     //    cout << "number of nodes = " << this->number_of_nodes << endl;
         cout << "setting " << depth_sequence.size() << " to 1 " << endl;
-        bsmap->setBit(depth_sequence.size());
+        bsmap->setBit(pointersize);
         pair<uint,uint> aux_node = this->preorder_vector[i];
         if (aux_node.first == aux_node.second) {
             map_leaf->setBit(i);
@@ -117,7 +115,6 @@ void Topk::generateSequence() {
 
         pair<uint,uint> aux = this->ll->getValue(i,k);
         pair<uint,uint> node_aux = preorder_vector[i];
-      //  cout << "i=" << i << ", k = " << k << " aux.second = " << aux.second << endl;
         while(aux.second != (uint)-1) {
             uint level = 0;
             size_t vl,vr;
@@ -128,17 +125,15 @@ void Topk::generateSequence() {
                 cst->Parent(vl,vr,&vl_p,&vr_p);
                 // level++;
                 // there is NO parent with a higher frequency...
-                // add to the dummy node at depth 0.
-                // "Real depth" should always start with depth 1.
                 if (vl_p == (size_t)-1 || vr_p == (size_t)-1) {
-                    cout << "IN!" << endl;
-                    this->documents.push_back(aux.first);
-                    frequencies.push_back(aux.second);
-                    depth_sequence.push_back(0);
-                    bsmap->setBit(depth_sequence.size());
-                    pointersize++;
-                    if (aux.second > max_freq)
-                        this->max_freq = aux.second;
+                    //cout << "IN!" << endl;
+                    // this->documents.push_back(aux.first);
+                    // frequencies.push_back(aux.second);
+                    // depth_sequence.push_back(0);
+                    // bsmap->setBit(depth_sequence.size());
+                    // pointersize++;
+                    // if (aux.second > max_freq)
+                    //     this->max_freq = aux.second;
                     cont = false;
                     break;
                 }
@@ -148,17 +143,17 @@ void Topk::generateSequence() {
                 pair<uint,uint> aux2 = ll->getValue(nodes_preorder[make_pair(vl_p,vr_p)],l);
                 while(aux2.second != (uint)-1 && aux.first != (uint)-1 && cont == true) {
                     
-                    if (aux2.first == aux.first) { // if the share the same document
+                    if (aux2.first == aux.first) { // if they share the same document
 
                         if (aux2.second > aux.second) { // if the frequency of the parent is higher
 
                             size_t tdepth = cst->TDepth(vl_p,vr_p); // calculate the tree depth
-                            depth_sequence.push_back(tdepth+1);
-                            this->documents.push_back(aux.first);
-                            frequencies.push_back(aux.second);
-                            pointersize++;
+                            depth_sequence.push_back(tdepth); // add the Tree Depth
+                            this->documents.push_back(aux.first); // add the document 
+                            frequencies.push_back(aux.second); // add the frequency
+                            pointersize++; // increase the amount of pointers
                             if (aux.second > max_freq)
-                                this->max_freq = aux.second;
+                                this->max_freq = aux.second; 
 
                             cont = false;
                          //   break;
@@ -171,7 +166,7 @@ void Topk::generateSequence() {
                 vr = vr_p;
             }
             k++; // get the next document,freq of the node being examinated
-            aux = this->ll->getValue(i,k); // 
+            aux = this->ll->getValue(i,k); 
         }
     }
 
@@ -179,7 +174,7 @@ void Topk::generateSequence() {
     uint *bsleaf_data = bsleaf->getData();
     uint *leaf_data = map_leaf->getData();
 
-
+    // resize the bitmaps to their corresponding sizes.
     bsmap = new BitString(bsmap_data,pointersize);
     bsleaf = new BitString(bsleaf_data,pointersize);
     map_leaf = new BitString(leaf_data,this->number_of_nodes);
@@ -191,23 +186,23 @@ void Topk::generateSequence() {
     nodes_preorder.clear();
     this->pointer_size = pointersize;
     uint *depth_sequence_array = new uint[pointersize];
+    // hard copy depth_sequence
     for (uint i = 0 ; i < pointersize;i++) {
         depth_sequence_array[i] = depth_sequence[i];
     }
-    // begin construction
+    // depth sequences
     cout << "pointer_size = " << this->pointer_size << endl;
     this->gd_sequence = &depth_sequence[0];
-    
     this->freq_array = &frequencies[0];
     uint *document_array = &this->documents[0];
-    this->doc_array = new Array(document_array,this->pointer_size);
 
+    // norm_weight is the normalized weight (reversed orderder), to use it with the RMQ
     int *norm_weight = new int[ this->pointer_size ];
-    std::map<uint,uint> freq_map;
+    std::map<uint,uint> freq_map; // for statistics
     for(int i = 0 ; i < this->pointer_size;i++) {
         freq_map[frequencies[i]] = freq_map[frequencies[i]] + 1;
         this->freq_array[i] = frequencies[i];
-        norm_weight[i] = this->max_freq - frequencies[i];
+        norm_weight[i] = this->max_freq - frequencies[i]; // reversing the frequencies
     }
     // std::map<uint,uint>::const_iterator it;
 
@@ -216,25 +211,23 @@ void Topk::generateSequence() {
     // }
 
     cout << "Sorting Freqs and documents..." << endl;
-    // using stable sort
+    // using stable sort, to match to the leafs of the wavelet tree
     sort(this->gd_sequence,this->freq_array,document_array,this->pointer_size);
     cout << "Done!" << endl;
     for (int i = 0 ; i < this->pointer_size;i++ )
     {
-     cout << "| " << i << " | " << gd_sequence[i] << " | " <<  this->freq_array[i] << " | " << document_array[i] << endl;
+        cout << "| " << i << " | " << gd_sequence[i] << " | " <<  this->freq_array[i] << " | " << document_array[i] << endl;
     }
-//    this->d_array = document_array;
-
+    this->doc_array = new Array(document_array,this->pointer_size);
     this->freq_dacs = new factorization(this->freq_array,this->pointer_size);
-    frequencies.clear();
-    cout << "Constructing Wavelet Tree" << endl;
 
+    frequencies.clear();
+    cout << "Constructing Wavelet Tree of Depth Sequences" << endl;
     Array *A = new Array(depth_sequence_array,this->pointer_size);
     MapperNone * map = new MapperNone();
     BitSequenceBuilder * bsb = new BitSequenceBuilderRG(30);
     this->d_sequence = new WaveletTreeRMQ(*A, bsb, map,(uint*)norm_weight);
 
-    cout << "Done! " << endl;
     
     delete A;
     delete []norm_weight;
@@ -243,21 +236,19 @@ void Topk::generateSequence() {
     delete this->stp;
     delete bsmap;
     delete bsleaf;
-    cout << "done! " << endl;
+    cout << "Done! " << endl;
 }
-
-
 
 double Topk::query(uchar *q,uint size_q) {
     ulong *occ;
     ulong numocc;
-    cout << "recevied query:" << q << " size = " << size_q << endl;
+    cout << "recevied query:" << q << " of length  = " << size_q << endl;
     ticsa->locate(q,size_q,&occ,&numocc);
     if (numocc == 0) {
         cout << "Nothing found..." << endl;
         return 0;
     }
-    cout << "numocc = " << numocc - 1 << endl;
+    cout << "numocc = " << numocc << endl;
     size_t start_range = ticsa->getISA(occ[0]);
     size_t end_range = ticsa->getISA(occ[numocc-1]);
     cout << "start_range = " << start_range << endl;
@@ -270,10 +261,11 @@ double Topk::query(uchar *q,uint size_q) {
 
     // cout << "start_range = " << start_range << endl;
     // cout << "end_range = " << end_range << endl;
+    // get the pre-order of the leafs
+    uint l1 = this->bitmap_leaf->select1(start_range)+1;
+    uint l2 = this->bitmap_leaf->select1(end_range)+1;
 
-    uint l1 = this->bitmap_leaf->select1(start_range);
-    uint l2 = this->bitmap_leaf->select1(end_range);
-
+    // get the nodes with those pre-orders
     uint l11 = this->t->Preorden_Select(l1);
     uint l22 =  this->t->Preorden_Select(l2);
     cout << "l1 = " << l1 << endl;
@@ -281,56 +273,41 @@ double Topk::query(uchar *q,uint size_q) {
     cout << "l1() = " << l11 << endl;
     cout << "l2() = " << l22 << endl;
 
-    uint lca = this->t->Lca(l1,l2);
-    cout << "LCA -> " << lca << endl;
+    uint lca = this->t->Lca(l11,l22);
+    cout << "LCA -> " << this->t->Preorder_Rank(lca) << endl;
 
     uint tdepth;
     uint p;
     uint pp;
 
-    #if 0
-    // ALTERNATIVE BEGIN
-    size_t r_lca;
-    size_t l_lca
-        cst->LCA(start_range,start_range,end_range,end_range,&l_lca,&r_lca);
-    p = this->nodes_preorder[make_pair(l_lca,r_lca)];
-    pp = p + (r_lca - l_lca);
-    tdepth = this->cst->TDepth(l_lca,r_lca);
-    cout << "p 2 = " << p << endl;
-    cout << "pp 2 = " << pp << endl;
-    cout << "tdepth2" << tdepth << endl;
-
-    cout << "s bitmap range 2 = " << this->bitsequence_map->select1(p)- p+1 << endl;
-    cout << "e bitmap range 2= " << this->bitsequence_map->select1(pp) - pp << endl;
-    // ALTERNATIVE END
-    #endif
-
-    
+    // p = the preorder value of lca
     p = this->t->Preorder_Rank(lca);
     tdepth = this->t->Depth(lca);
 
 
-    //pp = p + this->t->Subtree_Size(p);
-    pp = p + end_range - start_range ;
+    pp = p + this->t->Subtree_Size(lca);
+    //cout << "subtree = " << this->t->Subtree_Size(lca) << endl;
+
+    //pp = p + end_range - start_range ;
     // pp++;
 
     cout << "p = " << p << endl;
     cout << "pp = " << pp << endl;
-    // size_t s_new_range = this->bitsequence_map->select1(p) - p + 2;
-    // size_t e_new_range = this->bitsequence_map->select1(pp) -  pp + 1;
-    cout << "map size = " << this->bitsequence_map->getLength() << endl;
-    cout << "zeros = " << this->bitsequence_map->countZeros() << endl;
-    cout << "ones = " << this->bitsequence_map->countOnes() << endl;
-    size_t s_new_range = this->bitsequence_map->select1(p);
-    size_t e_new_range = this->bitsequence_map->select1(pp);
-    cout << "select1 -> " << this->bitsequence_map->select1(pp) << endl;
-    cout << "tdepth =" << tdepth << endl;
-    cout << "s_new_range = " << s_new_range << endl;
-    cout << "e_new_range = " << e_new_range << endl;
+    size_t s_new_range = this->bitsequence_map->select1(p) - p + 1;
+    size_t e_new_range = this->bitsequence_map->select1(pp) -  pp +2;
+    // cout << "map size = " << this->bitsequence_map->getLength() << endl;
+    // cout << "zeros = " << this->bitsequence_map->countZeros() << endl;
+    // cout << "ones = " << this->bitsequence_map->countOnes() << endl;
+    // // size_t s_new_range = this->bitsequence_map->select1(p);
+    // // size_t e_new_range = this->bitsequence_map->select1(pp);
+    // cout << "select1 -> " << this->bitsequence_map->select1(pp) << endl;
+    // cout << "tdepth =" << tdepth << endl;
+    // cout << "s_new_range = " << s_new_range << endl;
+    // cout << "e_new_range = " << e_new_range << endl;
     // cout << "s bitmap range = " << this->bitsequence_map->select1(p)- p+1 << endl;
     // cout << "e bitmap range = " << this->bitsequence_map->select1(pp) - pp << endl;
     if (tdepth != 0) {
-        vector<uint> v = this->d_sequence->rr2d_aux(s_new_range, e_new_range, 0, tdepth-2,0,0);
+        vector<uint> v = this->d_sequence->rr2d_aux(s_new_range, e_new_range, 0, tdepth-1,0,0);
 
         cout << "vector size = " << v.size() << endl;
         typedef priority_queue<int,vector<int>,mycomparison> mypq_type;
@@ -342,6 +319,7 @@ double Topk::query(uchar *q,uint size_q) {
             cout << "v[" << i << "] -> " << v[i] << endl;
             uint dacs_value = this->freq_dacs->access(v[i]+1);
             cout << "freq = " << dacs_value << endl;
+            cout << "doc = " << this->doc_array->getField(v[i]) << endl;
         }
 
         // for (int i = 0;i< v.size();i++) {

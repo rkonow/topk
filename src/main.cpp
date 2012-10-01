@@ -43,19 +43,19 @@ int main(int argc, char *argv[]) {
         queries[j] = (uchar*)strdup(qs[j].c_str());
     }
 
-    for (int i = 0 ; i < qs.size();i++) {
+    for (int i = 0 ; i < qs.size()-1;i++) {
     	cout << "-----------------------------" << endl;
     	cout << "query[" << i << "]" << " = " << queries[i] << endl;
     	cout << tk->query(queries[i],qs[i].length()) << endl;
     	cout << "-----------------------------" << endl;
     }
 
-    for (int i = 0 ; i < qs.size();i++)
-        free(queries[i]);
-    delete [] queries;
+    // for (int i = 0 ; i < qs.size()-1;i++)
+    //     free(queries[i]);
+   // delete [] queries;
 
     
-    delete tk;
-    delete [] file_sizes;
+    // delete tk;
+    // delete [] file_sizes;
     //delete tk;
 }
