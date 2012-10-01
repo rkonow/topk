@@ -12,11 +12,10 @@ class LinkList
 		int n;
 		int m;
 
-	LinkList(int n,int m)
+	LinkList(int n)
 	{
 		this->n = n;
-		this->m = m;
-		//this->list.reserve(n);
+		this->list.reserve(n);
 		//this->sizes.reserve(m);
 		for (size_t i = 0 ; i < n;i++)
 		{
@@ -50,7 +49,6 @@ class LinkList
 			this->list[i].clear();
 		}
 		this->list.clear();
-	//	delete this;
 	}
 };
 

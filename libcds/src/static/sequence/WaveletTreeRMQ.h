@@ -6,9 +6,9 @@
 using namespace rmq_space;
 namespace cds_static
 {
-	class WaveletTreeRMQ : public Sequence
-	{
-		 public:
+    class WaveletTreeRMQ : public Sequence
+    {
+        public:
 
             /** Builds a Wavelet Tree for the string stored in a.
              * @param bmb builder for the bitmaps in each level.
@@ -20,12 +20,12 @@ namespace cds_static
              * @param bmb builder for the bitmaps in each level.
              * @param am alphabet mapper (we need all symbols to be used).
              * */
-            WaveletTreeRMQ(const Array & a, BitSequenceBuilder * bmb, Mapper * am,uint *weight);
+            WaveletTreeRMQ(const Array & a, BitSequenceBuilder * bmb, Mapper * am, uint *weight);
             WaveletTreeRMQ(uint * symbols, size_t n, BitSequenceBuilder * bmb, Mapper * am, uint *weight, bool deleteSymbols = false);
-            // 
+            //
             /** Builds a Wavelet Tree for the string
              * pointed by symbols is an array of elements of "width" bits and length
-             * n. 
+             * n.
              * @param bmb builder for the bitmaps in each level.
              * @param am alphabet mapper (we need all symbols to be used).
              * */
@@ -38,8 +38,6 @@ namespace cds_static
 
             vector<uint>  rr2d_aux(size_t x_start,size_t x_end,size_t y_start,size_t y_end,size_t y_start_aux, size_t y_end_aux);
             void rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,size_t y_start_aux, size_t y_end_aux, uint sym, size_t start, size_t end, vector<uint> &result);
-
-
 
             size_t getSizeRMQ();
 
