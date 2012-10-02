@@ -7,7 +7,6 @@ class SuffixTreeHandler
     public:
         SuffixTree *cst;
         size_t size;
-        //tree_ff *tf;
 
         SuffixTreeHandler(SuffixTreeY *&cst,size_t n) {
             cout << "constructing handler " << endl;
@@ -16,7 +15,6 @@ class SuffixTreeHandler
             this->size = n;
         }
 
-        
         void generateBitmapAux(pair <size_t,size_t> nodes,BitString *bitmap,uint &bitmap_pos,vector<pair<uint,uint> > &result) {
             pair <size_t,size_t> r;
             size_t pl_aux = nodes.first;
@@ -30,9 +28,9 @@ class SuffixTreeHandler
             r = make_pair(next_vl,next_vr);
             if (next_vl != (size_t)-1 && next_vr != (size_t)-1) {
                 bitmap_pos++; // leave a 0
-                cout << "(";
+               // cout << "(";
                 generateBitmapAux(r,bitmap,bitmap_pos,result);
-                cout << ")";
+               // cout << ")";
                 bitmap_pos++;
                 bitmap->setBit(bitmap_pos);
                 pl_aux = next_vl;
@@ -53,11 +51,11 @@ class SuffixTreeHandler
             size_t a,b;
             cst->Root(&a,&b);
             bitmap_pos++;
-            cout << "(" ;
+          //  cout << "(" ;
             generateBitmapAux(make_pair(a,b),bitmap,bitmap_pos,nodes);
             bitmap_pos++;
             bitmap->setBit(bitmap_pos);
-            cout << ")";
+           // cout << ")";
             cout << "nodes.size() = " << nodes.size() << endl;
             BitString *new_bitmap = new BitString(bitmap->getData(),nodes.size()*2);
             for (int i = 0 ; i < nodes.size();i++) {

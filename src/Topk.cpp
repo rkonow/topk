@@ -95,8 +95,9 @@ void Topk::generateSequence() {
     size_t vl_p,vr_p;
     for (uint i = 0; i < this->number_of_nodes;i++) {
     //    cout << "number of nodes = " << this->number_of_nodes << endl;
-        cout << "setting " << depth_sequence.size() << " to 1 " << endl;
-        bsmap->setBit(pointersize);
+        cout << "setting " << pointersize << " to 1 " << endl;
+        
+        bsmap->setBit(depth_sequence.size());        
         pair<uint,uint> aux_node = this->preorder_vector[i];
         if (aux_node.first == aux_node.second) {
             map_leaf->setBit(i);
@@ -126,14 +127,14 @@ void Topk::generateSequence() {
                 // level++;
                 // there is NO parent with a higher frequency...
                 if (vl_p == (size_t)-1 || vr_p == (size_t)-1) {
-                    //cout << "IN!" << endl;
-                    // this->documents.push_back(aux.first);
-                    // frequencies.push_back(aux.second);
-                    // depth_sequence.push_back(0);
-                    // bsmap->setBit(depth_sequence.size());
-                    // pointersize++;
-                    // if (aux.second > max_freq)
-                    //     this->max_freq = aux.second;
+                    cout << "IN!" << endl;
+                    this->documents.push_back(aux.first);
+                    frequencies.push_back(aux.second);
+                    depth_sequence.push_back(0);
+                    bsmap->setBit(depth_sequence.size());
+                    pointersize++;
+                    if (aux.second > max_freq)
+                        this->max_freq = aux.second;
                     cont = false;
                     break;
                 }
@@ -148,7 +149,7 @@ void Topk::generateSequence() {
                         if (aux2.second > aux.second) { // if the frequency of the parent is higher
 
                             size_t tdepth = cst->TDepth(vl_p,vr_p); // calculate the tree depth
-                            depth_sequence.push_back(tdepth); // add the Tree Depth
+                            depth_sequence.push_back(tdepth+1); // add the Tree Depth (0 is reserved for the dummy ones)
                             this->documents.push_back(aux.first); // add the document 
                             frequencies.push_back(aux.second); // add the frequency
                             pointersize++; // increase the amount of pointers
@@ -262,8 +263,8 @@ double Topk::query(uchar *q,uint size_q) {
     // cout << "start_range = " << start_range << endl;
     // cout << "end_range = " << end_range << endl;
     // get the pre-order of the leafs
-    uint l1 = this->bitmap_leaf->select1(start_range)+1;
-    uint l2 = this->bitmap_leaf->select1(end_range)+1;
+    uint l1 = this->bitmap_leaf->select1(start_range);
+    uint l2 = this->bitmap_leaf->select1(end_range);
 
     // get the nodes with those pre-orders
     uint l11 = this->t->Preorden_Select(l1);
@@ -294,26 +295,24 @@ double Topk::query(uchar *q,uint size_q) {
     cout << "p = " << p << endl;
     cout << "pp = " << pp << endl;
     size_t s_new_range = this->bitsequence_map->select1(p) - p + 1;
-    size_t e_new_range = this->bitsequence_map->select1(pp) -  pp +2;
-    // cout << "map size = " << this->bitsequence_map->getLength() << endl;
-    // cout << "zeros = " << this->bitsequence_map->countZeros() << endl;
-    // cout << "ones = " << this->bitsequence_map->countOnes() << endl;
-    // // size_t s_new_range = this->bitsequence_map->select1(p);
-    // // size_t e_new_range = this->bitsequence_map->select1(pp);
-    // cout << "select1 -> " << this->bitsequence_map->select1(pp) << endl;
-    // cout << "tdepth =" << tdepth << endl;
-    // cout << "s_new_range = " << s_new_range << endl;
-    // cout << "e_new_range = " << e_new_range << endl;
-    // cout << "s bitmap range = " << this->bitsequence_map->select1(p)- p+1 << endl;
-    // cout << "e bitmap range = " << this->bitsequence_map->select1(pp) - pp << endl;
+    size_t e_new_range = this->bitsequence_map->select1(pp) -  pp;
+    cout << "amount of nodes = " << this->number_of_nodes << endl;
+    cout << "map size = " << this->bitsequence_map->getLength() << endl;
+    cout << "zeros = " << this->bitsequence_map->countZeros() << endl;
+    cout << "ones = " << this->bitsequence_map->countOnes() << endl;
+    // size_t s_new_range = this->bitsequence_map->select1(p);
+    // size_t e_new_range = this->bitsequence_map->select1(pp);
+    cout << "select1 -> " << this->bitsequence_map->select1(pp) << endl;
+    cout << "tdepth =" << tdepth << endl;
+    cout << "s_new_range = " << s_new_range << endl;
+    cout << "e_new_range = " << e_new_range << endl;
+    cout << "s bitmap range = " << this->bitsequence_map->select1(p)- p+1 << endl;
+    cout << "e bitmap range = " << this->bitsequence_map->select1(pp) - pp << endl;
     if (tdepth != 0) {
         vector<uint> v = this->d_sequence->rr2d_aux(s_new_range, e_new_range, 0, tdepth-1,0,0);
 
         cout << "vector size = " << v.size() << endl;
-        typedef priority_queue<int,vector<int>,mycomparison> mypq_type;
-        mypq_type pq (mycomparison(true));
-        int heap_capacity = 10;
-        uint min = (uint)-1;
+        
         int count = 0;
         for (int i = 0;i< v.size();i++) {
             cout << "v[" << i << "] -> " << v[i] << endl;
@@ -321,7 +320,11 @@ double Topk::query(uchar *q,uint size_q) {
             cout << "freq = " << dacs_value << endl;
             cout << "doc = " << this->doc_array->getField(v[i]) << endl;
         }
-
+        
+        typedef priority_queue<int,vector<int>,mycomparison> mypq_type;
+        mypq_type pq (mycomparison(true));
+        int heap_capacity = 10;
+        uint min = (uint)-1;
         // for (int i = 0;i< v.size();i++) {
         //      cout << "v[" << i << "] -> " << v[i] << endl;
         //     if (count == heap_capacity) {
@@ -379,7 +382,7 @@ size_t Topk::getSize() {
     size_t wt_size = this->d_sequence->getSize();
     size_t freq_array_size = this->freq_dacs->getSize();
     size_t tree_size = this->t->size();
-    size_t map_size = this->bitsequence_map->getSize() + this->bitsequence_leaf->getSize();
+    size_t map_size = this->bitsequence_map->getSize() + this->bitsequence_leaf->getSize() + this->bitsequence_leaf->getSize();
     size_t documents_size = this->doc_array->getSize();
     
     size_t total = csa_size + wt_size + freq_array_size + map_size + tree_size + documents_size;

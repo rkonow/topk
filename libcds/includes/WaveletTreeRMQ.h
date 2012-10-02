@@ -37,7 +37,8 @@ namespace cds_static
             void range_report_2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,uint sym, size_t start, size_t end, vector<uint> &result,size_t freq,RMQ *&r);
 
             vector<uint>  rr2d_aux(size_t x_start,size_t x_end,size_t y_start,size_t y_end,size_t y_start_aux, size_t y_end_aux);
-            void rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,size_t y_start_aux, size_t y_end_aux, uint sym, size_t start, size_t end, vector<uint> &result);
+            //void rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,size_t y_start_aux, size_t y_end_aux, uint sym, size_t start, size_t end, vector<uint> &result);
+            void rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,size_t y_start_aux, size_t y_end_aux,size_t max_y_lev, size_t min_y_lev,uint sym, size_t start, size_t end,vector<uint> &result);
 
             size_t getSizeRMQ();
 

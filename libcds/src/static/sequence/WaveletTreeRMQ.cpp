@@ -416,64 +416,11 @@ namespace cds_static
         //RMQ *t = new RMQ();
         vector<uint> result;
         //      result.reserve(1500);
-        rr2d(0,x_start,x_end,y_start,y_end,y_start,y_end,0,0,n-1,result);
+        rr2d(0,x_start,x_end,y_start,y_end,y_start,y_end,0,n-1,0,0,n-1,result);
         return result;
     }
 
-    void WaveletTreeRMQ::rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,size_t y_start_aux, size_t y_end_aux,uint sym, size_t start, size_t end,vector<uint> &result) {
-        // BitSequence *bs;
-        // while (lev < height) {
-
-        //     uint mask_left = createMask(0,height-lev-1);
-        //     uint mask_right = createMask(0,height-lev);
-        //     uint max_left = 0;
-        //     if (sym == 0)
-        //     max_left = mask_left;
-        //     else
-        //     max_left = sym | mask_left;
-
-        //     uint max_right = set(sym,lev) | mask_right;
-        //     uint min_left = max_left/2;
-        //     uint min_right = max_right/2+1;
-        //     cout << "level = " << lev << endl;
-        //     cout << "max_symbol_left = " << max_left << endl;
-        //     cout << "min_symbol_left = " << min_left << endl;
-        //     cout << endl;
-        //     cout << "max_symbol_right = " << max_right << endl;
-        //     cout << "min_symbol_right = " << min_right << endl;
-        //     cout << "symbol = " << sym << endl;
-        //     bs = bitstring[lev];
-        //     if (min_left <= y_end && max_left >= y_end){
-        //         // if (y_end == max_left) {
-        //         //     lev++;
-        //         //     sym = set(sym,lev);
-        //         //     cout << "symbol = " << sym << endl;
-        //         //  //   break;
-        //         // }
-        //         lev++;
-        //     }
-        //     if (min_right <= y_end && max_right >= y_end) {
-        //         sym = set(sym,lev);
-        //         lev++;
-        //     }
-
-        // }
-        // uint count_bits = lastBit(sym);
-        // uint  max_symbol |= ~(1<<(height-count_bits));
-        // uint min_symbol = sym << height-count_bits;
-        // if (sym > max_symbol)
-        //     return;
-        // // bit = sym & (1<<lev)
-        // // if (bit == 0) {
-        // //     goleft()
-        // // } else {
-        // //     goright()
-        // // }
-        // BitSequence *bs = bitstring[lev]
-        // for (int y = y_start ; y <= y_end;y++ )  {
-        //     this->rmq[lev]->query(bs->rank1(x_start)-1,bs->rank1(x_end+1)-1)
-        // }
-
+    void WaveletTreeRMQ::rr2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,size_t y_start_aux, size_t y_end_aux,size_t min_y_lev,size_t max_y_lev,uint sym, size_t start, size_t end,vector<uint> &result) {
         size_t x_start_left,x_start_right,x_end_left,x_end_right;
         size_t before;
         size_t end_left;
@@ -481,78 +428,23 @@ namespace cds_static
         size_t start_left;
         size_t start_right;
 
-        uint mask = createMask(0,height-lev);
-        uint mask2 = createMask(0,height-(lev+1));
+        uint mask = createMask(0,height-lev-1);
+        uint mask2 = createMask(0,height-(lev));
 
         size_t min_left = sym;
         size_t max_left = sym | mask2;
         size_t min_right = set(sym,lev);
         size_t max_right = set(sym,lev) | mask;
+        cout << "min_left = " << min_left << endl;
+        cout << "max_left = " << max_left << endl;
+        cout << "min_right = " << min_right << endl;
+        cout << "max_right = " << max_right << endl;
 
         size_t y_start_left,y_end_left,y_start_right,y_end_right = 0;
-
-        cout << "min_left =" << min_left << endl;
-        cout << "max_left =" << max_left << endl;
-        cout << endl;
-        cout << "min_right =" << min_right << endl;
-        cout << "max_right =" << max_right << endl;
 
         if (x_start > x_end || x_end > n-1)
             return;
 
-        if (y_start <= y_start_aux && y_end >= y_end_aux && lev != 0 ) {
-            cout << "FOUND IT!!!" << endl;
-            cout << "FOUND IT!!!->level = " << lev <<  endl;
-            cout << "y_start_aux =  " << y_start_aux <<  endl;
-            cout << "y_end_aux =  " << y_end_aux <<  endl;
-            cout << "x_start = " << x_start << endl;
-            cout << "x_end = " << x_end << endl;
-            uint m;
-            if (lev == height-1) {
-                m = this->rmq[lev]->query(x_start,x_end);
-                cout << "m is = " << m << endl;
-                result.push_back(m);
-                return;
-            }
-            else {
-                uint ret=sym;
-                start=x_start;
-                end=x_end;
-                m = this->rmq[lev]->query(start,end);
-                uint pos = m;
-                size_t level = lev;
-                cout << "x_start = " << x_start << endl;
-                cout << "x_end = " << x_end << endl;
-                cout << "entering with m = " << m << endl;
-                while(lev<height) {
-                    assert(pos>=start && pos<=end);
-                    if(bitstring[level]->access(pos)) {
-                        ret=set(ret,level);
-                        pos=bitstring[level]->rank1(pos-1)-bitstring[level]->rank1(start-1);
-                        start=(bitstring[level]->rank1(end)-bitstring[level]->rank1(start-1));
-                        start=end-start+1;
-                        pos+=start;
-                    }
-                    else {
-                        pos=pos-start-(bitstring[level]->rank1(pos)-bitstring[level]->rank1(start-1));
-                        end=end-start-(bitstring[level]->rank1(end)-bitstring[level]->rank1(start-1));
-                        end+=start;
-                        pos+=start;
-                    }
-                    lev++;
-                    }
-                cout << "symbol is " << ret << endl;
-                result.push_back(pos);
-               // return;
-            }
-        }
-
-        cout << "y_start =" << y_start << endl;
-        cout << "y_end =" << y_end << endl;
-        cout << endl;
-        cout << "y_start_aux =" << y_start_aux << endl;
-        cout << "y_end_aux =" << y_end_aux << endl;
-        cout << endl;
 
         if (lev < height) {
             BitSequence* bs = bitstring[lev];
@@ -561,103 +453,33 @@ namespace cds_static
 
             size_t rank_left = bs->rank1(start+x_start-1);
             size_t rank_right = bs->rank1(start+x_end);
-            int liveright = 1;
-            int liveleft = 1;
+            bool liveright = true;
+            bool liveleft = true;
 
-            if (rank_left == rank_right) {
-                liveright = 0;
-            }
-            if ( (rank_right - rank_left) == (x_end - x_start)) {
-                liveleft = 0;
-            }
+            // if (rank_left == rank_right) liveright = false;
+            // if ( (rank_right - rank_left) == (x_end - x_start)) liveleft = false;
 
-            x_start_left = x_start - (rank_left - before);
-            x_end_left = x_end - (rank_right - before);
-            end_left = end - (bs->rank1(end) - before);
-            start_left = start;
-            //cout << "izquierda | x_start_left = " << x_start_left << " x_end_left = " << x_end_left << endl;
-
-            if (y_start_aux >= min_left && y_start_aux <= max_left) {
-                y_start_left = y_start_aux;
+            if (liveleft) {
+                x_start_left = x_start - (rank_left - before);
+                x_end_left = x_end - (rank_right - before);
+                end_left = end - (bs->rank1(end) - before);
+                start_left = start;
+                rr2d(lev+1,x_start_left,x_end_left,y_start,y_end,y_start_left,y_end_left,min_left,max_left,sym,start_left,end_left,result);
             }
-            else {
-                cout << "retornando 1" << endl;
-                return;
+            if (liveright){ 
+                sym=set(sym,lev);
+                start_right = end - (bs->rank1(end)-before) + 1;
+                end_right = end;
+                x_start_right = rank_left - before ;
+                x_end_right = rank_right - before-1;
+                rr2d(lev+1,x_start_right,x_end_right,y_start,y_end,y_start_right,y_end_right,min_right,max_right,sym,start_right,end_right,result);
             }
-
-            if (y_end_aux >= min_left && y_end_aux <= max_left) {
-                y_end_left = y_end_aux;
-            }
-            else if (y_start_aux >= min_left && y_start_aux <= max_left) {
-                y_start_left = y_start_aux;
-                y_end_left = max_left;
-            }
-            else {
-                cout << "retornando 2" << endl;
-                return;
-            }
-            cout << "y_start_left = " << y_end_right << endl;
-            cout << "y_end_left = " << y_end_right << endl;
-            cout << endl;
-            if (liveleft)
-                rr2d(lev+1,x_start_left,x_end_left,y_start,y_end,y_start_left,y_end_left,sym,start_left,end_left,result);
-
-            if (y_start_aux >= min_right && y_start_aux <= max_right) {
-                y_start_right = y_start_aux;
-            }
-            else if(y_end_aux >= min_right && y_end_aux <= max_right) {
-                y_start_right = min_right;
-            }
-            else {
-                cout << "retornando en 3 " << endl;
-                return;
-            }
-
-            if (y_end_aux >= min_right && y_end_aux <= max_right) {
-                y_end_right = y_end_aux;
-            }
-            else {
-                cout << "retornando en 4" << endl;
-                return;
-            }
-            cout << "y_start_right = " << y_end_right << endl;
-            cout << "y_end_right = " << y_end_right << endl;
-            sym=set(sym,lev);
-            start_right = end - (bs->rank1(end)-before) + 1;
-            end_right = end;
-            x_start_right = rank_left - before ;
-            x_end_right = rank_right - before-1;
-            //cout << "derecha | x_start_left = " << x_start_right << " x_end_left = " << x_end_right << endl;
-            if (liveright)
-                rr2d(lev+1,x_start_right,x_end_right,y_start,y_end,y_start_right,y_end_right,sym,start_right,end_right,result);
 
         }
         else {
             if (x_start > x_end)
                 return;
             BitSequence* bs = bitstring[lev-1];
-            // if (am->unmap(sym) <= y_end && am->unmap(sym) >= y_start)
-            // {
-            //     cout << sym << endl;
-            //     uint q_start;
-            //     uint q_end;
-            //     if (x_start == x_end){
-            //         q_start = start+x_start;
-            //         q_end = q_start+1;
-            //     }else {
-            //         q_start = start+x_start;
-            //         q_end = start+x_end;
-            //     }
-
-            //     int k = 10;
-            //     vector<uint> v_results = topk(q_start,q_end,bits(k)+1,r);
-            //     for (int i = 0 ; i < v_results.size();i++)
-            //     {
-            //         result.push_back(v_results[i]);
-            //     }
-            // }
-            // else
-            //     return;
         }
 
     }

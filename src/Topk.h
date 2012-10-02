@@ -16,7 +16,6 @@
 //#include <timing.h>
 
 #include <WaveletTreeRMQ.h>
-#include "rmq.cpp"
 #include <tree_ff.h>
 
 //#include "../dacs/src/dacs.h"
@@ -41,19 +40,20 @@ class Topk
         TextIndex *ticsa;
         WaveletTreeRMQ *d_sequence;
         tree_ff *t;
-
-        size_t number_of_nodes;
-        vector<pair<uint,uint>> preorder_vector;
-        map< pair<uint,uint>,pair<uint,uint> > nodes_map;
-        vector<uint> documents;
-        map <pair<uint,uint>,uint> nodes_preorder;
         BitSequenceRG * d;
+
+        Array *doc_array;
         factorization *freq_dacs;
         BitSequenceRG *bitsequence_map;
         BitSequenceRG *bitsequence_leaf;
         BitSequenceRG *bitmap_leaf;
 
-        Array *doc_array;
+
+        vector<pair<uint,uint>> preorder_vector;
+        vector<uint> documents;
+        map <pair<uint,uint>,uint> nodes_preorder;
+
+        size_t number_of_nodes;
         uint* d_array;
         uint *freq_array;
         size_t pointer_size;

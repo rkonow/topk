@@ -172,9 +172,9 @@ int main()
 	// }
 
 
-	x0 = 2;
+	x0 = 1;
 	x1 = 4;
-	y0 = 1;
+	y0 = 2;
 	y1 = 7;
 	
 	vector<uint> v = sequence->rr2d_aux(x0,x1,y0,y1,y0,y1);
