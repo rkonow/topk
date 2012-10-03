@@ -1,5 +1,6 @@
 /* wt_node_leaf.cpp
- * Copyright (C) 2008, Francisco Claude, all rights reserved.
+ * Copyright (C) 2008, Francisco Claude.
+ * Copyright (C) 2011, Matthias Petri.
  *
  * wt_node_leaf
  *
@@ -33,18 +34,18 @@ namespace cds_static
 
     wt_node_leaf::~wt_node_leaf() {}
 
-    size_t wt_node_leaf::rank(uint symbol, size_t pos, uint l, wt_coder * c) const
+    size_t wt_node_leaf::rank(uint *symbol, size_t pos, uint l, wt_coder *c) const
     {
-        if(symbol!=this->symbol) {
+      /*if(symbol!=this->symbol) {
             return 0;
-        }
-        pos++;
-        return pos;
+	    }*/
+      //pos++;
+        return pos+1;
     }
 
-    size_t wt_node_leaf::select(uint symbol, size_t pos, uint l, wt_coder * c) const
+    size_t wt_node_leaf::select(uint *symbol, size_t pos, uint l, wt_coder *c) const
     {
-        if(symbol!=this->symbol) return (size_t)-1;
+      //if(symbol!=this->symbol) return (size_t)-1;
         if(pos==0 || pos>count) return (size_t)-1;
         return pos;
     }
@@ -58,6 +59,11 @@ namespace cds_static
     {
         rank = pos+1;
         return symbol;
+    }
+
+    pair<uint,size_t> wt_node_leaf::quantile_freq(size_t left,size_t right,uint q) const
+    {
+        return std::make_pair(symbol,right-left+1);
     }
 
     size_t wt_node_leaf::getSize() const

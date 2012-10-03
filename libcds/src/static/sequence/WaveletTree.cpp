@@ -1,5 +1,7 @@
 /* WaveletTree.cpp
  * Copyright (C) 2008, Francisco Claude, all rights reserved.
+ * Copyright (C) 2008, Niko Välimäki.
+ * Copyright (C) 2011, Matthias Petri.
  *
  * WaveletTree definition
  *
@@ -95,18 +97,26 @@ namespace cds_static
 
     size_t WaveletTree::rank(uint symbol, size_t pos) const
     {
-        return root->rank(am->map(symbol), pos, 0, c);
+        uint * s = c->get_symbol(am->map(symbol));
+        size_t ret = root->rank(s, pos, 0, c);
+        delete [] s;
+        return ret;
     }
 
     size_t WaveletTree::count(uint s) const
     {
-        return root->rank(am->map(s), length-1, 0, c);
+      uint * s2 = c->get_symbol(am->map(s));
+      size_t ret = root->rank(s2, length-1, 0, c);
+      delete [] s2;
+      return ret;
     }
 
     size_t WaveletTree::select(uint symbol, size_t pos) const
     {
-        uint ret = root->select(am->map(symbol), pos, 0, c);
-        if(ret==((uint)-1)) return (uint)-1;
+      uint * s = c->get_symbol(am->map(symbol));
+        uint ret = root->select(s, pos, 0, c);
+        if(ret==((uint)-1)) { delete [] s; return (uint)-1;}
+	delete [] s;
         return ret-1;
     }
 
@@ -115,15 +125,32 @@ namespace cds_static
         return am->unmap(root->access(pos));
     }
 
+    uint WaveletTree::quantile(size_t left,size_t right,uint q) const
+    {
+        return quantile_freq(left,right,q).first;
+    }
+
+    pair<uint,size_t> WaveletTree::quantile_freq(size_t left,size_t right,uint q) const
+    {
+        /* q=1 -> q=0 */
+        q--;
+
+        pair<uint,size_t> res = root->quantile_freq(left,right,q);
+        return std::make_pair( am->unmap(res.first) , res.second );
+    }
+
     uint WaveletTree::access(size_t pos, size_t &rank) const
     {
-        cout << ".";
-        return root->access(pos, rank);
+        return am->unmap(root->access(pos, rank));
     }
 
     size_t WaveletTree::getSize() const
     {
-        return sizeof(WaveletTree)+sizeof(uint)+root->getSize()+am->getSize()+c->getSize();
+      // cout << "sizeof(WT): " << sizeof(WaveletTree) << endl;
+      // cout << "root: " << root->getSize() << endl;
+      // cout << "am: " << am->getSize() << endl;
+      // cout << "cdr: " << c->getSize() << endl;
+      return sizeof(WaveletTree)+root->getSize()+am->getSize()+c->getSize();
     }
 
     void WaveletTree::save(ofstream & fp) const
@@ -141,6 +168,7 @@ namespace cds_static
         if(rd!=WVTREE_HDR) return NULL;
         WaveletTree * ret = new WaveletTree();
         ret->n = loadValue<size_t>(fp);
+	ret->length = ret->n;
         ret->c = wt_coder::load(fp);
         ret->c->use();
         assert(ret->c!=NULL);

@@ -195,8 +195,8 @@ uint tree_ff::node_select(uint x){
 }
 
 uint tree_ff::size(){
-	cout << "size tree_ff  = " <<  sizeof(tree_ff)+topology->size() << endl;
-	cout << "size topology =" << topology->size() << endl;
+	// cout << "size tree_ff  = " <<  sizeof(tree_ff)+topology->size() << endl;
+	// cout << "size topology =" << topology->size() << endl;
 	return sizeof(tree_ff)+topology->size();
 }
 

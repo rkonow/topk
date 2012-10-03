@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <iostream>
 #include <WaveletTreeRMQ.h>
 #include <Sequence.h>
@@ -5,49 +7,9 @@
 #include <BitSequenceRG.h>
 #include <BitString.h>
 #include "rmq.cpp"
-#define pivot_index() (begin+(end-begin)/2)
-#define swap(a,b,t) ((t)=(a),(a)=(b),(b)=(t))
-
 using namespace cds_utils;
 using namespace cds_static;
 //using namespace std;
-
-
- 
-void sort(int array[], int array2[], int array3[], int begin, int end) {
-   /*** Use of static here will reduce memory footprint, but will make it thread-unsafe ***/
-   static int pivot;
-   static int t;     /* temporary variable for swap */
-   if (end > begin) {
-      int l = begin + 1;
-      int r = end;
-      swap(array[begin], array[pivot_index()], t); /*** choose arbitrary pivot ***/
-      swap(array2[begin], array2[pivot_index()], t); /*** choose arbitrary pivot ***/
-
-      pivot = array[begin];
-      while(l < r) {
-         if (array[l] <= pivot) {
-            l++;
-         } else {
-            while(l < --r && array[r] >= pivot) /*** skip superfluous swaps ***/
-               ;
-            swap(array[l], array[r], t); 
-            swap(array2[l], array2[r], t); 
-            swap(array3[l], array3[r], t); 
-         }
-      }
-      l--;
-      swap(array[begin], array[l], t);
-      swap(array2[begin], array2[l], t);
-      swap(array3[begin], array3[l], t);
-      sort(array, array2,array3,begin, l);
-      sort(array, array2,array3,r, end);
-
-   }
-}
- 
-#undef swap
-#undef pivot_index
 
 class mycomparison
 {
@@ -107,12 +69,36 @@ uint createMask(uint i,uint j) {
 	uint aux = ~((~0u << j) & (~0u >> i));
 	return aux;
 }
+
+
+void permute_values(uint *array, uint *tmp, vector<pair<uint, uint> > &v, int n) {
+  for(uint i=0; i<n; i++) {
+    tmp[i] = array[v[i].second];
+  }
+  for(uint i=0; i<n; i++) {
+    array[i] = tmp[i];
+  }
+}
+
+void sort(uint array[], uint array2[], uint array3[], uint n) {
+  vector<pair<uint, uint> > vec(n);
+  for (uint i=0; i < n; i++) {
+    vec[i] = make_pair(array[i], i);
+  }
+  std::stable_sort(vec.begin(), vec.end());
+  uint *tmp = new uint[n];
+  permute_values(array, tmp, vec, n);
+  permute_values(array2, tmp, vec, n);
+  permute_values(array3, tmp, vec, n);
+  delete [] tmp;
+}
+
 int main()
 {
 	int n = 10;
 	
-	int array[10] = {0,1,2,3,4,5,6,7,1,2};
-	int Warray[10] = {1,2,3,4,5,6,7,8,9,10};
+	int array[10] = {0,1,0,2,3,4,5,6,7,8};
+	int Warray[10] = {10,2,3,4,5,6,7,8,9,10};
 	
 
 	uint array2[10] = {2,3,2,3,1,3,2,1,1,0};
@@ -164,7 +150,7 @@ int main()
 	uint x0,x1;
 	uint y0,y1;
 
-	// sort(array,Warray,array3,0,9);
+	 sort((uint*)array,(uint*)Warray,array3,10);
 	// RMQ *r = new RMQ(Warray,10);
 	// for (int i = 0 ; i < 10;i++)
 	// {
@@ -172,17 +158,18 @@ int main()
 	// }
 
 
-	x0 = 1;
-	x1 = 4;
-	y0 = 2;
-	y1 = 7;
+	x0 = 0;
+	x1 = 9;
+	y0 = 0;
+	y1 = 9;
 	
-	vector<uint> v = sequence->rr2d_aux(x0,x1,y0,y1,y0,y1);
-//	cout << "returned a pq of size:" << pq.size() << endl;
-
-	for (int i = 0 ; i < v.size();i++ ) {
-		cout << " v[" << i << "] = " << v[i] << endl;
+	vector<pair<uint,uint> > v;
+	v = sequence->range_call(x0,x1,y0,y1,10);
+	for (int i = 0 ; i < v.size();i++)	{
+		cout << "v[" << i << "].weight = " << v[i].first << endl;
+		cout << "v[" << i << "].pos = " << v[i].second << endl;
 	}
+
  //  	typedef priority_queue<int,vector<int>,mycomparison> mypq_type;
  //  	mypq_type pq (mycomparison(true));
 	// int heap_capacity = 6;

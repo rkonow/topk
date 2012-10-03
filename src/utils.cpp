@@ -74,7 +74,7 @@ bool testSuffixTree(SuffixTree *s1){
 size_t *mergeFiles(vector<string> files, size_t n)
 {
 	FILE * faux;
-	faux = fopen("merged","w+");
+	faux = fopen("merged","w");
 	size_t *sizes = new size_t[n];
 
 	for (int i = 1 ; i < n+1 ; i++)
@@ -82,27 +82,28 @@ size_t *mergeFiles(vector<string> files, size_t n)
 		FILE * pFile;
 		long size;
 		char * buffer;
-        size_t result;
+    size_t result;
 
-        cout << "reading " << files[i-1] << endl;
+    cout << "reading " << files[i-1] << endl;
 		pFile = fopen(files[i-1].c_str(),"rb");
 		if (pFile==NULL) perror ("file");
 		else
 		{
 			fseek (pFile, 0, SEEK_END);
-		    size=ftell (pFile);
-	        sizes[i-1] = size-1;
-		    rewind (pFile);
-		    buffer = new char[size];
+		  size=ftell (pFile);
+	    sizes[i-1] = size;
+		  rewind (pFile);
+		  buffer = new char[size];
  			if (buffer == NULL) {fputs ("Memory error",stderr); exit (2); }
  			result = fread (buffer,1,size,pFile);
+      //buffer[size] = 0;
  			cout << " size is = " << size << endl;
  			cout << " size of buffer = " << sizeof(buffer) << endl;
-  			if (result != size) {fputs ("Reading error",stderr); exit (3);}
-		    printf ("Size of file %i ,  %ld bytes.\n",i,size);
-			fwrite (buffer , 1 , size-1, faux );
-		    delete [] (buffer);
-   		    fclose (pFile);	
+  		if (result != size) {fputs ("Reading error",stderr); exit (3);}
+		  printf ("Size of file %i ,  %ld bytes.\n",i,size);
+			fwrite (buffer , 1 , size, faux );
+		  delete [] (buffer);
+   		fclose (pFile);	
 		}
 	}
 	fclose(faux);

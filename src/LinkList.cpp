@@ -27,6 +27,7 @@ class LinkList
 
 	void insert(size_t pos,size_t v, size_t w)
 	{
+		// cout << "inserting node = " << pos << endl;
 		this->sizes[pos]++;
 		this->list[pos].push_back(make_pair(v,w));
 	}

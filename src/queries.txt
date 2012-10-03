@@ -2,4 +2,8 @@ a
 ab
 n
 zn
-
+A
+C
+T
+G
+ACTG

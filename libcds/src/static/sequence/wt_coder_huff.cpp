@@ -25,6 +25,7 @@ namespace cds_static
 {
 
     wt_coder_huff::wt_coder_huff(const Array & a, Mapper * am) {
+      am->use();
         size_t n = a.getLength();
         uint * symbs = new uint[n];
         for(uint i=0;i<n;i++)
@@ -32,24 +33,29 @@ namespace cds_static
         hc = new HuffmanCoder(symbs, n);
         maxBuffer = hc->maxLength()/W+1;
         delete [] symbs;
+      am->unuse();
     }
 
     wt_coder_huff::wt_coder_huff(uint * symbs, size_t n, Mapper * am) {
+      am->use();
         for(uint i=0;i<n;i++)
             symbs[i] = am->map(symbs[i]);
         hc = new HuffmanCoder(symbs, n);
         maxBuffer = hc->maxLength()/W+1;
         for(uint i=0;i<n;i++)
             symbs[i] = am->unmap(symbs[i]);
+      am->unuse();
     }
 
     wt_coder_huff::wt_coder_huff(uchar * symbs, size_t n, Mapper * am) {
+      am->use();
         for(uint i=0;i<n;i++)
             symbs[i] = (uchar)am->map((uint)symbs[i]);
         hc = new HuffmanCoder(symbs, n);
         maxBuffer = hc->maxLength()/W+1;
         for(uint i=0;i<n;i++)
             symbs[i] = (uchar)am->unmap((uint)symbs[i]);
+      am->unuse();
     }
 
     wt_coder_huff::wt_coder_huff() {}
@@ -58,12 +64,22 @@ namespace cds_static
         delete hc;
     }
 
+  uint * wt_coder_huff::get_symbol(uint symbol) const {
+    uint * ret = new uint[maxBuffer];
+    hc->encode(symbol, ret, (size_t)0);
+    return ret;
+  }
+
                                  // TODO: it could be implemented in a more efficient (low level) way
     bool wt_coder_huff::is_set(uint symbol, uint l) const
     {
         uint buffer[maxBuffer];
         hc->encode(symbol, buffer, (size_t)0);
         return bitget(buffer,l);
+    }
+
+    bool wt_coder_huff::is_set(uint *symbol, uint l) const {
+        return bitget(symbol,l);
     }
 
     bool wt_coder_huff::done(uint symbol, uint l) const

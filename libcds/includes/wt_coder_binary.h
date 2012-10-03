@@ -45,8 +45,10 @@ namespace cds_static
             wt_coder_binary(uchar * seq, size_t n, Mapper * am);
             virtual ~wt_coder_binary();
             virtual bool is_set(uint symbol, uint l) const;
+            virtual bool is_set(uint *symbol, uint l) const;
             virtual bool done(uint symbol, uint l) const;
             virtual uint depth() const{ return h; }
+	    virtual uint * get_symbol(uint symbol) const;
             virtual size_t getSize() const;
             virtual void save(ofstream & fp) const;
             static wt_coder_binary * load(ifstream & fp);

@@ -1,5 +1,6 @@
 /* wt_node_internal.cpp
- * Copyright (C) 2008, Francisco Claude, all rights reserved.
+ * Copyright (C) 2008, Francisco Claude.
+ * Copyright (C) 2011, Matthias Petri.
  *
  * wt_node_internal
  *
@@ -98,7 +99,7 @@ namespace cds_static
             uchar swap = symbols[j+left];
                                  // swapping
             while (!get_field(done, 1, j+left)) {
-                ulong k = j;
+                uint k = j;
                 if (!c->is_set(swap,l))
                     j = bitmap->rank0(k)-1;
                 else
@@ -149,40 +150,40 @@ namespace cds_static
         if(left_child!=NULL) delete left_child;
     }
 
-    size_t wt_node_internal::rank(uint symbol, size_t pos, uint l, wt_coder * c) const
+    size_t wt_node_internal::rank(uint * symbol, size_t pos, uint l, wt_coder *c) const
     {
         bool is_set = c->is_set(symbol,l);
         if(!is_set) {
-            if(left_child==NULL) {
+	  /*if(left_child==NULL) {
                 cout << "symbol1=" << symbol << endl;
                 return 0;
-            }
-            return left_child->rank(symbol, bitmap->rank0(pos)-1,l+1,c);
+		}*/
+            return left_child->rank(symbol, bitmap->rank0(pos)-1,l+1, c);
         }
         else {
-            if(right_child==NULL) {
+	  /*if(right_child==NULL) {
                 cout << "symbol2=" << symbol << endl;
                 return 0;
-            }
-            return right_child->rank(symbol, bitmap->rank1(pos)-1,l+1,c);
+		}*/
+            return right_child->rank(symbol, bitmap->rank1(pos)-1,l+1, c);
         }
     }
 
-    size_t wt_node_internal::select(uint symbol, size_t pos, uint l, wt_coder * c) const
+    size_t wt_node_internal::select(uint * symbol, size_t pos, uint l, wt_coder *c) const
     {
-        bool is_set = c->is_set(symbol, l);
+      bool is_set = c->is_set(symbol,l); //c->is_set(symbol, l);
         size_t ret = 0;
         if(!is_set) {
-            if(left_child==NULL)
-                return (size_t)(-1);
-            size_t new_pos = left_child->select(symbol, pos, l+1,c);
+	  /*if(left_child==NULL)
+	    return (size_t)(-1);*/
+            size_t new_pos = left_child->select(symbol, pos, l+1, c);
             if(new_pos+1==0) return (uint)(-1);
             ret = bitmap->select0(new_pos)+1;
         }
         else {
-            if(right_child==NULL)
-                return (size_t)(-1);
-            size_t new_pos = right_child->select(symbol, pos, l+1,c);
+	  /*if(right_child==NULL)
+	    return (size_t)(-1);*/
+            size_t new_pos = right_child->select(symbol, pos, l+1, c);
             if(new_pos+1==0) return (uint)(-1);
             ret = bitmap->select1(new_pos)+1;
         }
@@ -192,30 +193,48 @@ namespace cds_static
 
     uint wt_node_internal::access(size_t pos) const
     {
-        bool is_set = bitmap->access(pos);
+      size_t rOpt = 0;
+      bool is_set = bitmap->access(pos,rOpt);
         if(!is_set) {
             assert(left_child!=NULL);
-            return left_child->access(bitmap->rank0(pos)-1);
+            return left_child->access(rOpt-1);
         }
         else {
             assert(right_child!=NULL);
-            return right_child->access(bitmap->rank1(pos)-1);
+            return right_child->access(rOpt-1);
         }
     }
 
     // Returns the value at given position and its rank
     uint wt_node_internal::access(size_t pos, size_t &rankp) const
     {
-        bool is_set = bitmap->access(pos);
+      size_t rOpt = 0;
+      bool is_set = bitmap->access(pos,rOpt);
         if(!is_set) {
             // recurse left
-            pos = bitmap->rank0(pos)-1;
-            return left_child->access(pos, rankp);
+            return left_child->access(rOpt-1, rankp);
         }
         else {
             // recurse right
-            pos = bitmap->rank1(pos)-1;
-            return right_child->access(pos, rankp);
+            return right_child->access(rOpt-1, rankp);
+        }
+    }
+
+    pair<uint,size_t> wt_node_internal::quantile_freq(size_t left,size_t right,uint q) const
+    {
+        /* number of 1s before T[l..r] */
+        size_t rank_before_left = bitmap->rank1(left-1);
+        /* number of 1s before T[r] */
+        size_t rank_before_right = bitmap->rank1(right);
+        /* number of 1s in T[l..r] */
+        size_t num_ones = rank_before_right - rank_before_left;
+        /* number of 0s in T[l..r] */
+        size_t num_zeros = (right-left+1) - num_ones;
+
+        if(q >= num_zeros) {
+            return right_child->quantile_freq(rank_before_left,rank_before_left+num_ones-1,q-num_zeros);
+        } else {
+            return left_child->quantile_freq((left-rank_before_left),(left-rank_before_left)+num_zeros-1,q);
         }
     }
 

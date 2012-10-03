@@ -1,5 +1,6 @@
 /* WaveletTreeNoptrs.h
- * Copyright (C) 2008, Francisco Claude, all rights reserved.
+ * Copyright (C) 2008, Francisco Claude.
+ * Copyright (C) 2011, Matthias Petri.
  *
  * WaveletTreeNoptrs definition
  *
@@ -22,96 +23,99 @@
 #ifndef _WVTREE_NOPTRS_H
 #define _WVTREE_NOPTRS_H
 
-
 #include <iostream>
 #include <cassert>
-#include <queue>
 #include <libcdsBasics.h>
 #include <BitSequence.h>
 #include <BitSequenceBuilder.h>
 #include <Sequence.h>
 #include <Mapper.h>
-//#include "rmq.h"
+#include <set>
 
 using namespace std;
 
 namespace cds_static
 {
 
-    class WaveletTreeNoptrs : public Sequence
-    {
-        public:
+	class WaveletTreeNoptrs : public Sequence
+	{
+		public:
 
-            /** Builds a Wavelet Tree for the string stored in a.
-             * @param bmb builder for the bitmaps in each level.
-             * @param am alphabet mapper (we need all symbols to be used).
-             * */
-            WaveletTreeNoptrs(const Array & a, BitSequenceBuilder * bmb, Mapper * am);
-            /** Builds a Wavelet Tree for the string
-             * pointed by symbols assuming its length
-             * equals n and uses bmb to build the bitsequence
-             * @param bmb builder for the bitmaps in each level.
-             * @param am alphabet mapper (we need all symbols to be used).
-             * */
-            WaveletTreeNoptrs(uint * symbols, size_t n, BitSequenceBuilder * bmb, Mapper * am, bool deleteSymbols = false);
+			/** Builds a Wavelet Tree for the string stored in a.
+			 * @param bmb builder for the bitmaps in each level.
+			 * @param am alphabet mapper (we need all symbols to be used).
+			 * */
+			WaveletTreeNoptrs(const Array & a, BitSequenceBuilder * bmb, Mapper * am);
+			/** Builds a Wavelet Tree for the string
+			 * pointed by symbols assuming its length
+			 * equals n and uses bmb to build the bitsequence
+			 * @param bmb builder for the bitmaps in each level.
+			 * @param am alphabet mapper (we need all symbols to be used).
+			 * */
+			WaveletTreeNoptrs(uint * symbols, size_t n, BitSequenceBuilder * bmb, Mapper * am, bool deleteSymbols = false);
 
-            // 
-            /** Builds a Wavelet Tree for the string
-             * pointed by symbols is an array of elements of "width" bits and length
-             * n. 
-             * @param bmb builder for the bitmaps in each level.
-             * @param am alphabet mapper (we need all symbols to be used).
-             * */
-            WaveletTreeNoptrs(uint * symbols, size_t n, uint width, BitSequenceBuilder * bmb, Mapper * am, bool deleteSymbols = false);
+			//
+			/** Builds a Wavelet Tree for the string
+			 * pointed by symbols is an array of elements of "width" bits and length
+			 * n.
+			 * @param bmb builder for the bitmaps in each level.
+			 * @param am alphabet mapper (we need all symbols to be used).
+			 * */
+			WaveletTreeNoptrs(uint * symbols, size_t n, uint width, BitSequenceBuilder * bmb, Mapper * am, bool deleteSymbols = false);
 
-            /** Destroys the Wavelet Tree */
-            virtual ~WaveletTreeNoptrs();
-            vector<uint>  range_report_aux(size_t x_start,size_t x_end,size_t value);
-            void range_report(uint lev, size_t x_start, size_t x_end,uint sym, size_t start, size_t end,vector <uint> &result,size_t value);
-            priority_queue<uint>  range_report_2d_aux(size_t x_start,size_t x_end,size_t y_start,size_t y_end);
-            void range_report_2d(uint lev, size_t x_start, size_t x_end,size_t y_start, size_t y_end,uint sym, size_t start, size_t end, priority_queue<uint> &result,size_t freq);
+			/** Destroys the Wavelet Tree */
+			virtual ~WaveletTreeNoptrs();
 
-            virtual size_t rank(uint symbol, size_t pos) const;
-            virtual size_t select(uint symbol, size_t j) const;
-            virtual uint access(size_t pos) const;
-            virtual size_t getSize() const;
+			virtual size_t rank(uint symbol, size_t pos) const;
+			virtual size_t select(uint symbol, size_t j) const;
+			virtual uint access(size_t pos) const;
+			virtual uint access(size_t pos, size_t &r) const;
+			virtual size_t getSize() const;
 
-            virtual size_t count(uint symbol) const;
+			void range(int i1, int i2, int j1, int j2, int leftb, int rightb, int symb, int level, set<int> *res);
+			void range(int i1, int i2, int j1, int j2, set<int> *res);
+			int trackUp(int i, int leftb, int level);
 
-            virtual void save(ofstream & fp) const;
-            static WaveletTreeNoptrs * load(ifstream & fp);
+			/* find the q-th smallest element in T[l..r] */
+			virtual uint quantile(size_t left,size_t right,uint q);
 
-        protected:
-            WaveletTreeNoptrs();
+			/* find the q-th smallest element in T[l..r] and return the freq */
+			pair<uint32_t,size_t> quantile_freq(size_t left,size_t right,uint q);
 
-            Mapper * am;
-            /** Only one bit-string for the Wavelet Tree. */
-            BitSequence **bitstring, *occ;
+			virtual size_t count(uint symbol) const;
 
-            /** Length of the string. */
-            size_t n;
+			virtual void save(ofstream & fp) const;
+			static WaveletTreeNoptrs * load(ifstream & fp);
 
-            /** Height of the Wavelet Tree. */
-            uint height, max_v;
-          //  RMQ **rmq;
-            /** Obtains the maximum value from the string
-             * symbols of length n */
-            uint max_value(uint * symbols, size_t n);
-            uint max_value(uint * symbols, unsigned width, size_t n);
+		protected:
+			WaveletTreeNoptrs();
 
-            /** How many bits are needed to represent val */
-            uint bits(uint val);
+			Mapper * am;
+			/** Only one bit-string for the Wavelet Tree. */
+			BitSequence **bitstring;
+			uint *OCC;
 
-            /** Returns true if val has its ind-th bit set
-             * to one. */
-            bool is_set(uint val, uint ind) const;
+			/** Length of the string. */
+			size_t n;
 
-            /** Sets the ind-th bit in val */
-            uint set(uint val, uint ind) const;
+			/** Height of the Wavelet Tree. */
+			uint height, max_v;
 
-            /** Recursive function for building the Wavelet Tree. */
-            void build_level(uint **bm, uint *symbols, uint level, uint length, uint offset);
-            void build_level(uint **bm, uint *symbols, unsigned width, uint level, uint length, uint offset);
-    };
+			/** Obtains the maximum value from the string
+			 * symbols of length n */
+			uint max_value(uint * symbols, size_t n);
+			uint max_value(uint * symbols, unsigned width, size_t n);
+
+			/** How many bits are needed to represent val */
+			uint bits(uint val);
+
+			/** Returns true if val has its ind-th bit set
+			 * to one. */
+			bool is_set(uint val, uint ind) const;
+
+			/** Recursive function for building the Wavelet Tree. */
+			void build_level(uint **bm, uint *symbols, uint level, uint length, uint offset);
+			void build_level(uint **bm, uint *symbols, unsigned width, uint level, uint length, uint offset);
+	};
 };
 #endif
